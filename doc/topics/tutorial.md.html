@@ -1407,6 +1407,15 @@ _.concat({<span class="string">'a'</span>,<span class="number">1</span>,<span cl
 
 <h2><a name='utility'>Utility functions</a></h2>
 
+<h3>noop ()</h3>
+
+<p>The no-operation function. Takes nothing, returns nothing. It is being used internally.</p>
+
+<pre>
+_.noop() <span class="comment">-- =&gt; nil</span>
+</pre>
+
+
 <h3>identity (value)</h3>
 
 <p>Returns the passed-in value. <br/>
@@ -1645,6 +1654,110 @@ iter_po2() <span class="comment">-- =&gt; 2
 </pre>
 
 
+<h3>flip (f)</h3>
+
+<p>Creates a function of <code>f</code> with arguments flipped in reverse order.</p>
+
+<pre>
+<span class="keyword">local</span> <span class="keyword">function</span> f(...) <span class="keyword">return</span> <span class="global">table</span>.concat({...}) <span class="keyword">end</span>
+<span class="keyword">local</span> flipped = _.flip(f)
+flipped(<span class="string">'a'</span>,<span class="string">'b'</span>,<span class="string">'c'</span>) <span class="comment">-- =&gt; 'cba'</span>
+</pre>
+
+
+<h3>over (&hellip;)</h3>
+
+<p>Creates a function that invokes a set of transforms with the arguments it receives.<br/>
+One can use use for example to get the tuple of min and max values from a set of values</p>
+
+<pre>
+<span class="keyword">local</span> minmax = _.over(<span class="global">math</span>.min, <span class="global">math</span>.max)
+minmax(<span class="number">5</span>,<span class="number">10</span>,<span class="number">12</span>,<span class="number">4</span>,<span class="number">3</span>) <span class="comment">-- =&gt; {3,12}</span>
+</pre>
+
+
+<h3>overEvery (&hellip;)</h3>
+
+<p>Creates a validation function. The returned function checks if all of the given predicates return truthy when invoked with the arguments it receives.</p>
+
+<pre>
+<span class="keyword">local</span> <span class="keyword">function</span> alleven(...)
+    <span class="keyword">for</span> i, v <span class="keyword">in</span> <span class="global">ipairs</span>({...}) <span class="keyword">do</span>
+        <span class="keyword">if</span> v%<span class="number">2</span>~=<span class="number">0</span> <span class="keyword">then</span> <span class="keyword">return</span> <span class="keyword">false</span> <span class="keyword">end</span>
+    <span class="keyword">end</span>
+    <span class="keyword">return</span> <span class="keyword">true</span>
+<span class="keyword">end</span>
+
+<span class="keyword">local</span> <span class="keyword">function</span> allpositive(...)
+    <span class="keyword">for</span> i, v <span class="keyword">in</span> <span class="global">ipairs</span>({...}) <span class="keyword">do</span>
+        <span class="keyword">if</span> v &lt; <span class="number">0</span> <span class="keyword">then</span> <span class="keyword">return</span> <span class="keyword">false</span> <span class="keyword">end</span>
+    <span class="keyword">end</span>
+    <span class="keyword">return</span> <span class="keyword">true</span>
+<span class="keyword">end</span>
+
+<span class="keyword">local</span> allok = _.overEvery(alleven, allpositive)
+
+allok(<span class="number">2</span>,<span class="number">4</span>,-<span class="number">1</span>,<span class="number">8</span>) <span class="comment">-- =&gt; false
+</span>allok(<span class="number">10</span>,<span class="number">3</span>,<span class="number">2</span>,<span class="number">6</span>) <span class="comment">-- =&gt; false
+</span>allok(<span class="number">8</span>,<span class="number">4</span>,<span class="number">6</span>,<span class="number">10</span>) <span class="comment">-- =&gt; true</span>
+</pre>
+
+
+<h3>overSome (&hellip;)</h3>
+
+<p>Creates a validation function. The returned function checks if any of the given predicates return truthy when invoked with the arguments it receives.</p>
+
+<pre>
+<span class="keyword">local</span> <span class="keyword">function</span> alleven(...)
+    <span class="keyword">for</span> i, v <span class="keyword">in</span> <span class="global">ipairs</span>({...}) <span class="keyword">do</span>
+        <span class="keyword">if</span> v%<span class="number">2</span>~=<span class="number">0</span> <span class="keyword">then</span> <span class="keyword">return</span> <span class="keyword">false</span> <span class="keyword">end</span>
+    <span class="keyword">end</span>
+    <span class="keyword">return</span> <span class="keyword">true</span>
+<span class="keyword">end</span>
+
+<span class="keyword">local</span> <span class="keyword">function</span> allpositive(...)
+    <span class="keyword">for</span> i, v <span class="keyword">in</span> <span class="global">ipairs</span>({...}) <span class="keyword">do</span>
+        <span class="keyword">if</span> v &lt; <span class="number">0</span> <span class="keyword">then</span> <span class="keyword">return</span> <span class="keyword">false</span> <span class="keyword">end</span>
+    <span class="keyword">end</span>
+    <span class="keyword">return</span> <span class="keyword">true</span>
+<span class="keyword">end</span>
+
+<span class="keyword">local</span> anyok = _.overSome(alleven,allpositive)
+
+anyok(<span class="number">2</span>,<span class="number">4</span>,-<span class="number">1</span>,<span class="number">8</span>) <span class="comment">-- =&gt; false
+</span>anyok(<span class="number">10</span>,<span class="number">3</span>,<span class="number">2</span>,<span class="number">6</span>) <span class="comment">-- =&gt; true
+</span>anyok(-<span class="number">1</span>,-<span class="number">5</span>,-<span class="number">3</span>) <span class="comment">-- =&gt; false</span>
+</pre>
+
+
+<h3>overArgs (f, &hellip;)</h3>
+
+<p>Creates a function that invokes <code>f</code> with its arguments transformed</p>
+
+<pre>
+<span class="keyword">local</span> <span class="keyword">function</span> f(x, y) <span class="keyword">return</span> x, y <span class="keyword">end</span>
+<span class="keyword">local</span> <span class="keyword">function</span> triple(x) retun x*<span class="number">3</span> <span class="keyword">end</span>
+<span class="keyword">local</span> <span class="keyword">function</span> square(x) retun x^<span class="number">2</span> <span class="keyword">end</span>
+<span class="keyword">local</span> new_f = _.overArgs(f, triple, square)
+
+new_f(<span class="number">1</span>,<span class="number">2</span>) <span class="comment">-- =&gt; 3, 4
+</span>new_f(<span class="number">10</span>,<span class="number">10</span>) <span class="comment">-- =&gt; 30, 100</span>
+</pre>
+
+
+<p>In case the number of arguments is greater than the number of transforms, the remaining args will be left as-is.</p>
+
+<pre>
+<span class="keyword">local</span> <span class="keyword">function</span> f(x, y, z) <span class="keyword">return</span> x, y, z <span class="keyword">end</span>
+<span class="keyword">local</span> <span class="keyword">function</span> triple(x) retun x*<span class="number">3</span> <span class="keyword">end</span>
+<span class="keyword">local</span> <span class="keyword">function</span> square(x) retun x^<span class="number">2</span> <span class="keyword">end</span>
+<span class="keyword">local</span> new_f = _.overArgs(f, triple, square)
+
+new_f(<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>) <span class="comment">-- =&gt; 3, 4, 3
+</span>new_f(<span class="number">10</span>,<span class="number">10</span>,<span class="number">10</span>) <span class="comment">-- =&gt; 30, 100, 10</span>
+</pre>
+
+
 <h3>partial (f, &hellip;)</h3>
 
 <p>Partially apply a function by filling in any number of its arguments. </p>
@@ -1656,12 +1769,45 @@ iter_po2() <span class="comment">-- =&gt; 2
 </pre>
 
 
-<p>The string <code>&apos;_&apos;</code> can be used as a placeholder in the list of arguments to specify an argument that should not be pre-filled, but left open to be supplied at call-time.</p>
+<p>The string <code>&apos;_&apos;</code> can be used as a placeholder in the list of arguments to specify an argument that should not be pre-filled, but is rather left open to be supplied at call-time.</p>
 
 <pre>
 <span class="keyword">local</span> <span class="keyword">function</span> diff(a, b) <span class="keyword">return</span> a - b <span class="keyword">end</span>
 <span class="keyword">local</span> remove5 = _.partial(diff, <span class="string">'_'</span>, <span class="number">5</span>) <span class="comment">-- arg 'a' will be given at call-time, but 'b' is set to 5
 </span>remove5(<span class="number">20</span>) <span class="comment">-- =&gt; 15</span>
+</pre>
+
+
+<h3>partialRight (f, &hellip;)</h3>
+
+<p>Like <code>_.partial</code>, it partially applies a function by filling in any number of its arguments, but from the right.</p>
+
+<pre>
+<span class="keyword">local</span> <span class="keyword">function</span> concat(...) <span class="keyword">return</span> <span class="global">table</span>.concat({...},<span class="string">','</span>) <span class="keyword">end</span>
+<span class="keyword">local</span> concat_right = _.partialRight(concat,<span class="string">'a'</span>,<span class="string">'b'</span>,<span class="string">'c'</span>)
+concat_right(<span class="string">'d'</span>) <span class="comment">-- =&gt; d,a,b,c
+</span>
+concat_right = _.partialRight(concat,<span class="string">'a'</span>,<span class="string">'b'</span>)
+concat_right(<span class="string">'c'</span>,<span class="string">'d'</span>) <span class="comment">-- =&gt; c,d,a,b
+</span>
+concat_right = _.partialRight(concat,<span class="string">'a'</span>)
+concat_right(<span class="string">'b'</span>,<span class="string">'c'</span>,<span class="string">'d'</span>) <span class="comment">-- =&gt; b,c,d,a</span>
+</pre>
+
+
+<p>The string <code>&apos;_&apos;</code>, as always, can be used as a placeholder in the list of arguments to specify an argument that should not be pre-filled, but is rather left open to be supplied at call-time.
+In that case, the first args supplied at runtime will be used to fill the initial list of args while the remaining will be prepended.</p>
+
+<pre>
+<span class="keyword">local</span> <span class="keyword">function</span> concat(...) <span class="keyword">return</span> <span class="global">table</span>.concat({...},<span class="string">','</span>) <span class="keyword">end</span>
+<span class="keyword">local</span> concat_right = _.partialRight(concat,<span class="string">'a'</span>,<span class="string">'_'</span>,<span class="string">'c'</span>)
+concat_right(<span class="string">'d'</span>,<span class="string">'b'</span>) <span class="comment">-- =&gt; b,a,d,c
+</span>
+concat_right = _.partialRight(concat,<span class="string">'a'</span>,<span class="string">'b'</span>,<span class="string">'_'</span>)
+concat_right(<span class="string">'c'</span>,<span class="string">'d'</span>) <span class="comment">-- =&gt; d,a,b,c
+</span>
+concat_right = _.partialRight(concat,<span class="string">'_'</span>,<span class="string">'a'</span>)
+concat_right(<span class="string">'b'</span>,<span class="string">'c'</span>,<span class="string">'d'</span>) <span class="comment">-- =&gt; c,d,b,a</span>
 </pre>
 
 
@@ -1728,6 +1874,18 @@ _.each(_.kvpairs(obj), <span class="keyword">function</span>(k,v)
 <span class="comment">-- =&gt; 1    y,2
 </span><span class="comment">-- =&gt; 2 x,1
 </span><span class="comment">-- =&gt; 3 z,3</span>
+</pre>
+
+
+<h3>toObj</h3>
+
+<p>Converts an array list of <a href="../index.html#kvpairs">kvpairs</a> to an object where keys are taken from the 1rst column in the <a href="../index.html#kvpairs">kvpairs</a> sequence, associated with values in the 2nd column.</p>
+
+<pre>
+<span class="keyword">local</span> list_pairs = {{<span class="string">'x'</span>,<span class="number">1</span>},{<span class="string">'y'</span>,<span class="number">2</span>},{<span class="string">'z'</span>,<span class="number">3</span>}}
+obj = _.toObj(list_pairs)
+
+<span class="comment">-- =&gt; {x = 1, y = 2, z = 3}</span>
 </pre>
 
 
@@ -2133,7 +2291,7 @@ _.import(context, <span class="keyword">true</span>)
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2017-04-13 12:33:58 </i>
+<i style="float:right;">Last updated 2017-04-15 17:26:06 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>

@@ -3,6 +3,19 @@ local _ = require 'moses'
 
 context('Utility functions specs', function()
 
+  context('noop', function()
+  
+    test('the no-operation function',function()
+			assert_nil(_.noop())
+			assert_nil(_.noop(nil))
+			assert_nil(_.noop(false))
+			assert_nil(_.noop({}))
+			assert_nil(_.noop(function() end))
+			assert_nil(_.noop(_.noop))
+    end)
+    
+  end)
+	
   context('identity', function()
   
     test('returns the received value',function()
@@ -304,6 +317,99 @@ context('Utility functions specs', function()
 		
 	end)
 	
+	context('flip', function()
+
+		test('creates a function which runs f with arguments flipped',function()
+			local function f(...) return table.concat({...}) end
+			local flipped = _.flip(f)
+			assert_equal(flipped('a','b','c'),'cba')
+		end)
+		
+	end)		
+	
+	context('over', function()
+
+		test('returns a function which applies a set of transforms to its args',function()
+			local minmax = _.over(math.min, math.max)
+			local maxmin = _.over(math.max, math.min)
+			assert_true(_.isEqual(minmax(5,10,12,4,3),{3,12}))
+			assert_true(_.isEqual(maxmin(5,10,12,4,3),{12,3}))	
+		end)
+		
+	end)		
+	
+	context('overEvery', function()
+		
+		local alleven, allpositive
+		
+		before(function()
+			alleven = function(...) 
+				for i, v in ipairs({...}) do if v%2~=0 then return false end end 
+				return true 
+			end
+
+			allpositive = function(...)
+				for i, v in ipairs({...}) do if v < 0 then return false end end
+				return true 	
+			end		
+		end)
+		
+		test('checks if all predicates passes truth with args. ',function()
+			local allok = _.overEvery(alleven, allpositive)
+			assert_false(allok(2,4,-1,8))
+			assert_false(allok(10,3,2,6))
+			assert_true(allok(8,4,6,10))
+		end)
+		
+	end)
+
+	context('overSome', function()
+		
+		local alleven, allpositive
+		
+		before(function()
+			alleven = function(...) 
+				for i, v in ipairs({...}) do if v%2~=0 then return false end end 
+				return true 
+			end
+
+			allpositive = function(...)
+				for i, v in ipairs({...}) do if v < 0 then return false end end
+				return true 	
+			end		
+		end)
+		
+		test('checks if all predicates passes truth with args. ',function()
+			local anyok = _.overSome(alleven, allpositive)
+			assert_false(anyok(2,4,-1,8))
+			assert_true(anyok(10,3,2,6))
+			assert_false(anyok(-1,-5,-3))
+		end)
+		
+	end)	
+	
+	context('overArgs', function()
+
+		test('Creates a function that invokes `f` with its arguments transformed',function()
+			local function f(x, y) return {x, y} end
+			local function triple(x) return x*3 end
+			local function square(x) return x^2 end
+			local new_f = _.overArgs(f, triple, square)
+			assert_true(_.isEqual(new_f(1,2), {3,4}))
+			assert_true(_.isEqual(new_f(10,10), {30,100}))			
+		end)
+		
+		test('when supplied more args than transforms, remaining are left as-is',function()
+			local function f(x, y, z, k) return {x, y, z, k} end
+			local function triple(x) return x*3 end
+			local function square(x) return x^2 end
+			local new_f = _.overArgs(f, triple, square)
+			assert_true(_.isEqual(new_f(1,2,3,4), {3,4,3,4}))
+			assert_true(_.isEqual(new_f(10,10,10,10), {30,100,10,10}))			
+		end)		
+		
+	end)	
+	
 	context('partial', function()
 
 		test('applies partially f',function()
@@ -323,6 +429,24 @@ context('Utility functions specs', function()
 		end)
 		
 	end)
+	
+	context('partialRight', function()
+
+		test('applies partial but from the right',function()
+			local function concat(a,b,c,d) return a..b..c..d end
+			assert_equal(_.partialRight(concat,'a','b','c')('d'), 'dabc')
+			assert_equal(_.partialRight(concat,'a','b')('c','d'), 'cdab')
+			assert_equal(_.partialRight(concat,'a')('b','c','d'), 'bcda')
+		end)
+		
+		test('\'_\' can be used as a placeholder',function()
+			local function concat(a,b,c,d) return a..b..c..d end		
+			assert_equal(_.partialRight(concat,'a','_','c')('d','b'), 'badc')
+			assert_equal(_.partialRight(concat,'a','b','_')('c','d'), 'dabc')
+			assert_equal(_.partialRight(concat,'_','a')('b','c','d'), 'cdba')
+		end)
+		
+	end)	
 	
 	context('curry', function()
 

@@ -1203,6 +1203,14 @@ _.concat({'a',1,0,1,'b'}) -- => 'a101b'
 
 ## <a name='utility'>Utility functions</a>
 
+### noop ()
+
+The no-operation function. Takes nothing, returns nothing. It is being used internally.
+
+```lua
+_.noop() -- => nil
+````
+
 ### identity (value)
 
 Returns the passed-in value. <br/>
@@ -1418,6 +1426,104 @@ iter_po2() -- => 4
 iter_po2() -- => 8
 ````
 
+### flip (f)
+
+Creates a function of `f` with arguments flipped in reverse order.
+
+```lua
+local function f(...) return table.concat({...}) end
+local flipped = _.flip(f)
+flipped('a','b','c') -- => 'cba'
+````
+
+### over (...)
+
+Creates a function that invokes a set of transforms with the arguments it receives.<br/>
+One can use use for example to get the tuple of min and max values from a set of values
+
+```lua
+local minmax = _.over(math.min, math.max)
+minmax(5,10,12,4,3) -- => {3,12}
+````
+
+### overEvery (...)
+
+Creates a validation function. The returned function checks if all of the given predicates return truthy when invoked with the arguments it receives.
+
+```lua
+local function alleven(...) 
+	for i, v in ipairs({...}) do 
+		if v%2~=0 then return false end 
+	end 
+	return true 
+end
+
+local function allpositive(...)
+	for i, v in ipairs({...}) do 
+		if v < 0 then return false end 
+	end 
+	return true 	
+end
+
+local allok = _.overEvery(alleven, allpositive)
+
+allok(2,4,-1,8) -- => false
+allok(10,3,2,6) -- => false
+allok(8,4,6,10) -- => true
+````
+
+### overSome (...)
+
+Creates a validation function. The returned function checks if any of the given predicates return truthy when invoked with the arguments it receives.
+
+```lua
+local function alleven(...) 
+	for i, v in ipairs({...}) do 
+		if v%2~=0 then return false end 
+	end 
+	return true 
+end
+
+local function allpositive(...)
+	for i, v in ipairs({...}) do 
+		if v < 0 then return false end 
+	end 
+	return true 	
+end
+
+local anyok = _.overSome(alleven,allpositive)
+
+anyok(2,4,-1,8) -- => false
+anyok(10,3,2,6) -- => true
+anyok(-1,-5,-3) -- => false
+````
+
+### overArgs (f, ...)
+
+Creates a function that invokes `f` with its arguments transformed
+
+```lua
+local function f(x, y) return x, y end
+local function triple(x) retun x*3 end
+local function square(x) retun x^2 end
+local new_f = _.overArgs(f, triple, square)
+
+new_f(1,2) -- => 3, 4
+new_f(10,10) -- => 30, 100
+````
+
+In case the number of arguments is greater than the number of transforms, the remaining args will be left as-is.
+
+```lua
+local function f(x, y, z) return x, y, z end
+local function triple(x) retun x*3 end
+local function square(x) retun x^2 end
+local new_f = _.overArgs(f, triple, square)
+
+new_f(1,2,3) -- => 3, 4, 3
+new_f(10,10,10) -- => 30, 100, 10
+````
+
 ### partial (f, ...)
 
 Partially apply a function by filling in any number of its arguments. 
@@ -1428,12 +1534,43 @@ local diffFrom20 = _.partial(diff, 20) -- arg 'a' will be 20 by default
 diffFrom20(5) -- => 15
 ````
 
-The string `'_'` can be used as a placeholder in the list of arguments to specify an argument that should not be pre-filled, but left open to be supplied at call-time.
+The string `'_'` can be used as a placeholder in the list of arguments to specify an argument that should not be pre-filled, but is rather left open to be supplied at call-time.
 
 ```lua
 local function diff(a, b) return a - b end
 local remove5 = _.partial(diff, '_', 5) -- arg 'a' will be given at call-time, but 'b' is set to 5
 remove5(20) -- => 15
+````
+
+### partialRight (f, ...)
+
+Like `_.partial`, it partially applies a function by filling in any number of its arguments, but from the right.
+
+```lua
+local function concat(...) return table.concat({...},',') end
+local concat_right = _.partialRight(concat,'a','b','c')
+concat_right('d') -- => d,a,b,c
+
+concat_right = _.partialRight(concat,'a','b')
+concat_right('c','d') -- => c,d,a,b
+
+concat_right = _.partialRight(concat,'a')
+concat_right('b','c','d') -- => b,c,d,a
+```
+
+The string `'_'`, as always, can be used as a placeholder in the list of arguments to specify an argument that should not be pre-filled, but is rather left open to be supplied at call-time.
+In that case, the first args supplied at runtime will be used to fill the initial list of args while the remaining will be prepended.
+
+```lua
+local function concat(...) return table.concat({...},',') end
+local concat_right = _.partialRight(concat,'a','_','c')
+concat_right('d','b') -- => b,a,d,c
+
+concat_right = _.partialRight(concat,'a','b','_')
+concat_right('c','d') -- => d,a,b,c
+
+concat_right = _.partialRight(concat,'_','a')
+concat_right('b','c','d') -- => c,d,b,a
 ````
 
 ### curry (f, n_args)
@@ -1493,6 +1630,17 @@ end)
 -- => 1	y,2
 -- => 2	x,1
 -- => 3	z,3
+````
+
+### toObj
+
+Converts an array list of `kvpairs` to an object where keys are taken from the 1rst column in the `kvpairs` sequence, associated with values in the 2nd column.
+
+```lua
+local list_pairs = {{'x',1},{'y',2},{'z',3}}
+obj = _.toObj(list_pairs)
+
+-- => {x = 1, y = 2, z = 3}
 ````
 
 ### property (key)

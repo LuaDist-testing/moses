@@ -1,5 +1,16 @@
 # Version history
 
+## 1.6.0 (14/04/17)
+
+* Added `_.toObj`
+* Added `_.noop`
+* Added `_.partialRight`
+* Added `_.flip`
+* Added `_.overArgs`
+* Added `_.over`
+* Added `_.overEvery`
+* Added `_.overSome`
+
 ## 1.5.1 (04/13/17)
 
 * Added `_.curry`

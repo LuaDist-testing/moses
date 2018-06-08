@@ -2,10 +2,10 @@
 -- @author [Roland Yonaba](http://github.com/Yonaba)
 -- @copyright 2012-2017
 -- @license [MIT](http://www.opensource.org/licenses/mit-license.php)
--- @release 1.5.1
+-- @release 1.6.0
 -- @module moses
 
-local _MODULEVERSION = '1.5.1'
+local _MODULEVERSION = '1.6.0'
 
 -- Internalisation
 local next, type, select, pcall = next, type, select, pcall
@@ -164,7 +164,7 @@ end
 -- @return an iterator function yielding key-value pairs from the passed-in table.
 function _.cycle(t, n)
   n = n or 1
-  if n<=0 then return function() end end
+  if n<=0 then return _.noop end
   local k, fk
   local i = 0
   while true do
@@ -1263,6 +1263,11 @@ end
 --- Utility functions
 -- @section Utility functions
 
+--- The no-operation function.
+-- @name noop
+-- @return nothing
+function _.noop() return end
+
 --- Returns the passed-in value. This function is used internally
 -- as a default iterator.
 -- @name identity
@@ -1505,13 +1510,93 @@ function _.iterator(f, x)
 	end
 end
 
+--- Creates a function of `f` with arguments flipped in reverse order.
+-- @name flip
+-- @param f a function 
+-- @return a function
+function _.flip(f)
+	return function(...)
+		return f(unpack(_.reverse({...})))
+	end
+end
+
+--- Creates a function that runs transforms on all arguments it receives.
+-- @name over
+-- @param ... a set of functions which will receive all arguments to the returned function
+-- @return a function
+-- @see overEvery
+-- @see overSome
+-- @see overArgs
+function _.over(...)
+	local transforms = {...}
+	return function(...)
+		local r = {}
+		for __,transform in ipairs(transforms) do
+			r[#r+1] = transform(...)
+		end
+		return r
+	end
+end
+
+--- Creates a validation function. The returned function checks if *all* of the given predicates return 
+-- truthy when invoked with the arguments it receives.
+-- @name overEvery
+-- @param ... a list of predicate functions
+-- @return a new function
+-- @see over
+-- @see overSome
+-- @see overArgs
+function _.overEvery(...)
+	local f = _.over(...)
+	return function(...)
+		return _.reduce(f(...),function(state,v) return state and v end)
+	end
+end
+
+--- Creates a validation function. The return function checks if *any* of a given predicates return 
+-- truthy when invoked with the arguments it receives.
+-- @name overSome
+-- @param ... a list of predicate functions
+-- @return a new function
+-- @see over
+-- @see overEvery
+-- @see overArgs
+function _.overSome(...)
+	local f = _.over(...)
+	return function(...)
+		return _.reduce(f(...),function(state,v) return state or v end)
+	end
+end
+
+--- Creates a function that invokes `f` with its arguments transformed. 1rst arguments will be passed to 
+-- the 1rst transform, 2nd arg to the 2nd transform, etc. Remaining arguments will not be transformed.
+-- @name overArgs
+-- @param f a function
+-- @param ... a list of transforms funcs prototyped as `f (v)`
+-- @return the result of running `f` with its transformed arguments
+-- @see over
+-- @see overEvery
+-- @see overSome
+function _.overArgs(f,...)
+	local _argf = {...}
+	return function(...)
+		local _args = {...}
+		for i = 1,#_argf do
+			local f = _argf[i]
+			if _args[i] then _args[i] = f(_args[i]) end
+		end
+		return f(unpack(_args))
+	end
+end
+
 --- Partially apply a function by filling in any number of its arguments. 
--- One may pass a string `'_'` as a placeholder in your list of arguments to specify an argument 
+-- One may pass a string `'_'` as a placeholder in the list of arguments to specify an argument 
 -- that should not be pre-filled, but left open to be supplied at call-time. 
 -- @name partial
 -- @param f a function
 -- @param ... a list of partial arguments to `f`
--- @return a new version of function f where having some of it original arguments filled
+-- @return a new version of function f having some of it original arguments filled
+-- @see partialRight
 -- @see curry
 function _.partial(f,...)
 	local partial_args = {...}
@@ -1525,6 +1610,25 @@ function _.partial(f,...)
 	end
 end
 
+--- Similar to @{partial}, but from the right.
+-- @name partialRight
+-- @param f a function
+-- @param ... a list of partial arguments to `f`
+-- @return a new version of function f having some of it original arguments filled
+-- @see partialRight
+-- @see curry
+function _.partialRight(f,...)
+	local partial_args = {...}
+	return function (...)
+		local n_args = {...}	
+		local f_args = {}
+		for k = 1,#partial_args do
+			f_args[k] = (partial_args[k] == '_') and _.pop(n_args) or partial_args[k]
+		end
+		return f(unpack(_.append(n_args, f_args)))
+	end
+end
+
 --- Curries a function. If the given function `f` takes multiple arguments, it returns another version of 
 -- `f` that takes a single argument (the first of the arguments to the original function) and returns a new 
 -- function that takes the remainder of the arguments and returns the result. 
@@ -1533,6 +1637,7 @@ end
 -- @param[opt] n_args the number of arguments expected for `f`. Defaults to 2.
 -- @return a curried version of `f`
 -- @see partial
+-- @see partialRight
 function _.curry(f, n_args)
 	n_args = n_args or 2
 	local _args = {}
@@ -1577,10 +1682,26 @@ end
 -- @name kvpairs
 -- @param obj an object
 -- @return an array list of key-values pairs
+-- @see toObj
 function _.kvpairs(obj)
 	local t = {}
 	_.each(obj, function(k,v) t[#t+1] = {k,v} end)
 	return t
+end
+
+--- Converts an array list of `kvpairs` to an object. Keys are taken
+-- from the 1rst column in the `kvpairs` sequence, associated with values in the 2nd
+-- column
+-- @name toObj
+-- @param kvpairs an array-list of `kvpairs`
+-- @return an object
+-- @see kvpairs
+function _.toObj(kvpairs)
+	local obj = {}
+	for __, v in ipairs(kvpairs) do
+		obj[v[1]] = v[2]
+	end
+	return obj
 end
 
 --- Returns a function that will return the key property of any passed-in object.

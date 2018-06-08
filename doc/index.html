@@ -56,7 +56,7 @@
     <h3>Info:</h3>
     <ul>
         <li><strong>Copyright</strong>: 2012-2017</li>
-        <li><strong>Release</strong>: 1.5.1</li>
+        <li><strong>Release</strong>: 1.6.0</li>
         <li><strong>License</strong>: <a href="http://www.opensource.org/licenses/mit-license.php">MIT</a></li>
         <li><strong>Author</strong>: <a href="http://github.com/Yonaba">Roland Yonaba</a></li>
     </ul>
@@ -379,6 +379,10 @@
 <h2><a href="#Utility_functions">Utility functions </a></h2>
 <table class="function_list">
 	<tr>
+	<td class="name" nowrap><a href="#noop">noop ()</a></td>
+	<td class="summary">The no-operation function.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#identity">identity (value)</a></td>
 	<td class="summary">Returns the passed-in value.</td>
 	</tr>
@@ -447,8 +451,32 @@
 	<td class="summary">Produces an iterator which repeatedly apply a function <code>f</code> onto an input.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#flip">flip (f)</a></td>
+	<td class="summary">Creates a function of <code>f</code> with arguments flipped in reverse order.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#over">over (...)</a></td>
+	<td class="summary">Creates a function that runs transforms on all arguments it receives.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#overEvery">overEvery (...)</a></td>
+	<td class="summary">Creates a validation function.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#overSome">overSome (...)</a></td>
+	<td class="summary">Creates a validation function.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#overArgs">overArgs (f, ...)</a></td>
+	<td class="summary">Creates a function that invokes <code>f</code> with its arguments transformed.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#partial">partial (f, ...)</a></td>
 	<td class="summary">Partially apply a function by filling in any number of its arguments.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#partialRight">partialRight (f, ...)</a></td>
+	<td class="summary">Similar to <a href="index.html#partial">partial</a>, but from the right.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#curry">curry (f[, n_args])</a></td>
@@ -468,6 +496,10 @@
 	<tr>
 	<td class="name" nowrap><a href="#kvpairs">kvpairs (obj)</a></td>
 	<td class="summary">Converts keys and values a an array-list of [k, v].</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#toObj">toObj (kvpairs)</a></td>
+	<td class="summary">Converts an array list of <a href="index.html#kvpairs">kvpairs</a> to an object.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#property">property (key)</a></td>
@@ -3182,6 +3214,25 @@
 
     <dl class="function">
     <dt>
+    <a name = "noop"></a>
+    <strong>noop ()</strong>
+    </dt>
+    <dd>
+    The no-operation function.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        nothing
+    </ol>
+
+
+
+
+</dd>
+    <dt>
     <a name = "identity"></a>
     <strong>identity (value)</strong>
     </dt>
@@ -3711,12 +3762,167 @@
 
 </dd>
     <dt>
+    <a name = "flip"></a>
+    <strong>flip (f)</strong>
+    </dt>
+    <dd>
+    Creates a function of <code>f</code> with arguments flipped in reverse order.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">f</span>
+         a function
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        a function
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "over"></a>
+    <strong>over (...)</strong>
+    </dt>
+    <dd>
+    Creates a function that runs transforms on all arguments it receives.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">...</span>
+         a set of functions which will receive all arguments to the returned function
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        a function
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <li><a href="index.html#overEvery">overEvery</a></li>
+         <li><a href="index.html#overSome">overSome</a></li>
+         <li><a href="index.html#overArgs">overArgs</a></li>
+    </ul>
+
+
+</dd>
+    <dt>
+    <a name = "overEvery"></a>
+    <strong>overEvery (...)</strong>
+    </dt>
+    <dd>
+    Creates a validation function.  The returned function checks if <em>all</em> of the given predicates return
+ truthy when invoked with the arguments it receives.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">...</span>
+         a list of predicate functions
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        a new function
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <li><a href="index.html#over">over</a></li>
+         <li><a href="index.html#overSome">overSome</a></li>
+         <li><a href="index.html#overArgs">overArgs</a></li>
+    </ul>
+
+
+</dd>
+    <dt>
+    <a name = "overSome"></a>
+    <strong>overSome (...)</strong>
+    </dt>
+    <dd>
+    Creates a validation function.  The return function checks if <em>any</em> of a given predicates return
+ truthy when invoked with the arguments it receives.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">...</span>
+         a list of predicate functions
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        a new function
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <li><a href="index.html#over">over</a></li>
+         <li><a href="index.html#overEvery">overEvery</a></li>
+         <li><a href="index.html#overArgs">overArgs</a></li>
+    </ul>
+
+
+</dd>
+    <dt>
+    <a name = "overArgs"></a>
+    <strong>overArgs (f, ...)</strong>
+    </dt>
+    <dd>
+    Creates a function that invokes <code>f</code> with its arguments transformed.  1rst arguments will be passed to
+ the 1rst transform, 2nd arg to the 2nd transform, etc. Remaining arguments will not be transformed.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">f</span>
+         a function
+        </li>
+        <li><span class="parameter">...</span>
+         a list of transforms funcs prototyped as <code>f (v)</code>
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        the result of running <code>f</code> with its transformed arguments
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <li><a href="index.html#over">over</a></li>
+         <li><a href="index.html#overEvery">overEvery</a></li>
+         <li><a href="index.html#overSome">overSome</a></li>
+    </ul>
+
+
+</dd>
+    <dt>
     <a name = "partial"></a>
     <strong>partial (f, ...)</strong>
     </dt>
     <dd>
     Partially apply a function by filling in any number of its arguments.<br/>
- One may pass a string <code>&apos;_&apos;</code> as a placeholder in your list of arguments to specify an argument
+ One may pass a string <code>&apos;_&apos;</code> as a placeholder in the list of arguments to specify an argument
  that should not be pre-filled, but left open to be supplied at call-time.
 
 
@@ -3733,13 +3939,47 @@
     <h3>Returns:</h3>
     <ol>
 
-        a new version of function f where having some of it original arguments filled
+        a new version of function f having some of it original arguments filled
     </ol>
 
 
     <h3>See also:</h3>
     <ul>
-         <a href="index.html#curry">curry</a>
+         <li><a href="index.html#partialRight">partialRight</a></li>
+         <li><a href="index.html#curry">curry</a></li>
+    </ul>
+
+
+</dd>
+    <dt>
+    <a name = "partialRight"></a>
+    <strong>partialRight (f, ...)</strong>
+    </dt>
+    <dd>
+    Similar to <a href="index.html#partial">partial</a>, but from the right.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">f</span>
+         a function
+        </li>
+        <li><span class="parameter">...</span>
+         a list of partial arguments to <code>f</code>
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        a new version of function f having some of it original arguments filled
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <li><a href="index.html#partialRight">partialRight</a></li>
+         <li><a href="index.html#curry">curry</a></li>
     </ul>
 
 
@@ -3774,7 +4014,8 @@
 
     <h3>See also:</h3>
     <ul>
-         <a href="index.html#partial">partial</a>
+         <li><a href="index.html#partial">partial</a></li>
+         <li><a href="index.html#partialRight">partialRight</a></li>
     </ul>
 
 
@@ -3855,6 +4096,41 @@
     </ol>
 
 
+    <h3>See also:</h3>
+    <ul>
+         <a href="index.html#toObj">toObj</a>
+    </ul>
+
+
+</dd>
+    <dt>
+    <a name = "toObj"></a>
+    <strong>toObj (kvpairs)</strong>
+    </dt>
+    <dd>
+    Converts an array list of <a href="index.html#kvpairs">kvpairs</a> to an object.  Keys are taken
+ from the 1rst column in the <a href="index.html#kvpairs">kvpairs</a> sequence, associated with values in the 2nd
+ column
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">kvpairs</span>
+         an array-list of <a href="index.html#kvpairs">kvpairs</a>
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        an object
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="index.html#kvpairs">kvpairs</a>
+    </ul>
 
 
 </dd>
@@ -4668,7 +4944,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2017-04-13 12:33:58 </i>
+<i style="float:right;">Last updated 2017-04-15 17:26:06 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>
