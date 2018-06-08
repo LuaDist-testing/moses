@@ -1,5 +1,12 @@
 # Version history
 
+## 1.6.1 (04/27/17)
+
+* Added `_.array`
+* Added `_.clear`
+* Added `_.time`
+* Added `_.before`
+
 ## 1.6.0 (14/04/17)
 
 * Added `_.toObj`

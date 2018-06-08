@@ -1,17 +1,9 @@
--- This file was automatically generated for the LuaDist project.
-
 package = "moses"
-version = "1.6.0-1"
--- LuaDist source
+version = "1.6.1-1"
 source = {
-  tag = "1.6.0-1",
-  url = "git://github.com/LuaDist-testing/moses.git"
+   url = "https://github.com/Yonaba/Moses/archive/Moses-1.6.1-1.tar.gz",
+   dir = "Moses-Moses-1.6.1-1"
 }
--- Original source
--- source = {
---    url = "https://github.com/Yonaba/Moses/archive/Moses-1.6.0-1.tar.gz",
---    dir = "Moses-Moses-1.6.0-1"
--- }
 description = {
    summary = "Utility-belt library for functional programming in Lua",
    detailed = [[

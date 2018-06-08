@@ -2,22 +2,23 @@
 -- @author [Roland Yonaba](http://github.com/Yonaba)
 -- @copyright 2012-2017
 -- @license [MIT](http://www.opensource.org/licenses/mit-license.php)
--- @release 1.6.0
+-- @release 1.6.1
 -- @module moses
 
-local _MODULEVERSION = '1.6.0'
+local _MODULEVERSION = '1.6.1'
 
 -- Internalisation
-local next, type, select, pcall = next, type, select, pcall
+local next, type, select, pcall  = next, type, select, pcall
 local setmetatable, getmetatable = setmetatable, getmetatable
-local t_insert, t_sort = table.insert, table.sort
-local t_remove,t_concat = table.remove, table.concat
-local randomseed, random, huge = math.randomseed, math.random, math.huge
-local floor, max, min = math.floor, math.max, math.min
-local rawget = rawget
-local unpack = table.unpack or unpack
-local pairs,ipairs = pairs,ipairs
-local _ = {}
+local t_insert, t_sort           = table.insert, table.sort
+local t_remove,t_concat          = table.remove, table.concat
+local randomseed, random, huge   = math.randomseed, math.random, math.huge
+local floor, max, min            = math.floor, math.max, math.min
+local rawget                     = rawget
+local unpack                     = table.unpack or unpack
+local pairs,ipairs               = pairs,ipairs
+local clock                      = os.clock
+local _                          = {}
 
 
 -- ======== Private helpers
@@ -81,6 +82,15 @@ local unique_id_counter = -1
 
 --- Table functions
 -- @section Table functions
+
+--- Clears a table. All its values become nil.
+-- @name clear
+-- @param t a table
+-- @return the given table, cleared.
+function _.clear(t)
+	for k in pairs(t) do t[k] = nil end
+	return t
+end
 
 --- Iterates on key-value pairs, calling `f (k, v)` at every step.
 -- <br/><em>Aliased as `forEach`</em>.
@@ -1259,7 +1269,6 @@ function _.concat(array, sep, i, j)
 
 end
 
-
 --- Utility functions
 -- @section Utility functions
 
@@ -1281,23 +1290,6 @@ function _.identity(value) return value end
 -- @return a constant function
 function _.constant(value) return function() return value end end
 
---- Returns a version of `f` that runs only once. Successive calls to `f`
--- will keep yielding the same output, no matter what the passed-in arguments are. 
--- It can be used to initialize variables.
--- @name once
--- @param f a function
--- @return a new function
--- @see after
-function _.once(f)
-  local _internal = 0
-  local _args = {}
-  return function(...)
-      _internal = _internal+1
-      if _internal<=1 then _args = {...} end
-      return f(unpack(_args))
-    end
-end
-
 --- Memoizes a given function by caching the computed result.
 -- Useful for speeding-up slow-running functions. If a `hash` function is passed,
 -- it will be used to compute hash keys for a set of input values for caching.
@@ -1317,6 +1309,42 @@ function _.memoize(f, hash)
     end
 end
 
+--- Returns a version of `f` that runs only once. Successive calls to `f`
+-- will keep yielding the same output, no matter what the passed-in arguments are. 
+-- It can be used to initialize variables.
+-- @name once
+-- @param f a function
+-- @return a new function
+-- @see before
+-- @see after
+function _.once(f)
+  local _internal = 0
+  local _args = {}
+  return function(...)
+		_internal = _internal+1
+		if _internal <= 1 then _args = {...} end
+		return f(unpack(_args))
+  end
+end
+
+--- Returns a version of `f` that will run no more than `count` times. Next calls will
+-- keep yielding the results of the count-th call.
+-- @name before
+-- @param f a function
+-- @param count a count
+-- @return a new function
+-- @see once
+-- @see after
+function _.before(f, count)
+  local _internal = 0
+  local _args = {}
+  return function(...)
+		_internal = _internal+1
+		if _internal <= count then _args = {...} end
+		return f(unpack(_args))
+  end
+end
+
 --- Returns a version of `f` that runs on the `count-th` call.
 -- Useful when dealing with asynchronous tasks.
 -- @name after
@@ -1324,12 +1352,13 @@ end
 -- @param count the number of calls before `f` will start running.
 -- @return a new function
 -- @see once
+-- @see before
 function _.after(f, count)
   local _limit,_internal = count, 0
   return function(...)
-      _internal = _internal+1
-      if _internal >= _limit then return f(...) end
-    end
+		_internal = _internal+1
+		if _internal >= _limit then return f(...) end
+  end
 end
 
 --- Composes functions. Each passed-in function consumes the return value of the function that follows.
@@ -1498,7 +1527,7 @@ end
 
 --- Produces an iterator which repeatedly apply a function `f` onto an input. 
 -- Yields x, then f(x), then f(f(x)), continuously.
--- @name iterate
+-- @name iterator
 -- @param f a function 
 -- @param x an initial input to `f`
 -- @return an iterator fnction
@@ -1508,6 +1537,16 @@ function _.iterator(f, x)
 		x = f(x)
 		return x
 	end
+end
+
+--- Iterates an iterator and returns its values in an array.
+-- @name array
+-- @param ... an iterator (a function, a table and a value)
+-- @return an array of results
+function _.array(...)
+	local r = {}
+	for v in ... do r[#r+1] = v end
+	return r
 end
 
 --- Creates a function of `f` with arguments flipped in reverse order.
@@ -1653,6 +1692,17 @@ function _.curry(f, n_args)
 		end
 	end
 	return scurry
+end
+
+--- Returns the execution time of `f (...)` and its returned values.
+-- @name time
+-- @param f a function
+-- @param[opt] ... optional args to `f`
+-- @return the execution time and the results of `f (...)`
+function _.time(f, ...)
+	local stime = clock()
+	local r = {f(...)}
+	return clock() - stime, unpack(r)
 end
 
 --- Object functions

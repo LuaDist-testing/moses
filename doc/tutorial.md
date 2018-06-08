@@ -36,6 +36,13 @@ local _ = require ("moses")
 
 ## <a name='table'>Table functions</a>
 
+### clear (t)
+
+Clears a table. All its values becomes nil. It returns the passed-in table.
+
+```lua
+local t = _.clear({1,2,'hello',true}) -- => {}
+````
 
 ### each (t, f, ...)
 *Aliases: `_.forEach`*.
@@ -1233,6 +1240,20 @@ pi(2) -- => 3.1415926535898
 pi(math.pi) -- => 3.1415926535898
 ````
 
+### memoize (f, hash)
+*Aliases: `_.cache`*.
+
+Memoizes a slow-running function. It caches the result for a specific input, so that the next time the function is called with the same input, it will lookup the result in its cache, instead of running again the function body.
+
+```lua
+local function fibonacci(n)
+  return n < 2 and n or fibonacci(n-1)+fibonacci(n-2)
+end  
+local mem_fibonacci = _.memoize(fibonacci)
+fibonacci(20) -- => 6765 (but takes some time)
+mem_fibonacci(20) -- => 6765 (takes less time)
+````
+
 ### once (f)
 
 Produces a function that runs only once. Successive calls to this function will still yield the same input.
@@ -1246,18 +1267,18 @@ sq(4) -- => 1
 sq(5) -- => 1
 ````
 
-### memoize (f, hash)
-*Aliases: `_.cache`*.
+### before (f, count)
 
-Memoizes a slow-running function. It caches the result for a specific input, so that the next time the function is called with the same input, it will lookup the result in its cache, instead of running again the function body.
+Returns a version of `f` that will run no more than `count` times. Next calls will keep yielding the results of the (n-th)-1 call.
 
 ```lua
-local function fibonacci(n)
-  return n < 2 and n or fibonacci(n-1)+fibonacci(n-2)
-end  
-local mem_fibonacci = _.memoize(fibonacci)
-fibonacci(20) -- => 6765 (but takes some time)
-mem_fibonacci(20) -- => 6765 (takes less time)
+local function greet(someone) return 'hello '..someone end
+local greetOnly3people = _.before(greet, 3)
+greetOnly3people('John') -- => 'hello John'
+greetOnly3people('Moe') -- => 'hello Moe'
+greetOnly3people('James') -- => 'hello James'
+greetOnly3people('Joseph') -- => 'hello James'
+greetOnly3people('Allan') -- => 'hello James'
 ````
 
 ### after (f, count)
@@ -1424,6 +1445,16 @@ local function iter_po2 = _.iterator(po2, 1)
 iter_po2() -- => 2
 iter_po2() -- => 4
 iter_po2() -- => 8
+````
+
+### array (...)
+
+Iterates a given iterator function and returns its values packed in an array.
+
+```lua
+local text = 'letters'
+local chars = string.gmatch(text, '.')
+local letters = _.array(chars) -- => {'l','e','t','t','e','r','s'}
 ````
 
 ### flip (f)
@@ -1593,6 +1624,21 @@ local curried_product = _.curry(product)
 curried_product(5)(4) -- => 20
 curried_product(3)(-5) -- => -15
 curried_product(0)(1) -- => 0
+````
+
+### time (f, ...)
+
+Returns the execution time of `f (...)` in seconds and its results.
+
+```lua
+local function wait_count(n) 
+	local i = 0
+	while i < n do i = i + 1 end
+	return i
+end
+
+local time, i = _.time(wait_count, 1e6) -- => 0.002 1000000
+local time, i = _.time(wait_count, 1e7) -- => 0.018 10000000
 ````
 
 **[[⬆]](#TOC)**
