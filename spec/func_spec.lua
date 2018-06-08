@@ -13,6 +13,17 @@ context('Utility functions specs', function()
     end)
     
   end)
+	
+  context('constant', function()
+  
+    test('creates a constant function',function()
+			local gravity = _.constant(9.81)
+			assert_equal(gravity(),9.81)
+			assert_equal(gravity(10), 9.81)
+			assert_equal(gravity(nil), 9.81)
+    end)
+    
+  end)	
   
   context('once', function()
   
@@ -116,7 +127,17 @@ context('Utility functions specs', function()
       local compositae = _.compose(f,g,h)
       assert_equal(compositae(10),36)
       assert_equal(compositae(20),121)
-    end)    
+    end)   
+
+    test('compose non commutative functions in reverse order',function()
+      local function f(s) return (s or '')..'f' end
+      local function g(s) return (s or '')..'g' end
+      local function h(s) return (s or '')..'h' end
+      assert_equal(_.compose(f,g,h)(),'hgf')
+      assert_equal(_.compose(h,g,f)(),'fgh')
+      assert_equal(_.compose(f,h,g)(),'ghf')
+      assert_equal(_.compose(g,h,f)(),'fhg')
+    end) 		
     
   end) 
 
@@ -193,6 +214,16 @@ context('Utility functions specs', function()
     
   end) 
 
+  context('bind2', function()
+  
+    test('binds a value to the second arg of a function',function()
+      local last2 = _.bind2(_.last,2)
+      local r = last2({1,2,3,4,5,6})
+      assert_true(_.isEqual(r, {5,6}))
+    end)
+    
+  end)
+
   context('bindn', function()
   
     test('binds n values to as the n-first args of a function',function()
@@ -206,6 +237,26 @@ context('Utility functions specs', function()
     
   end)
   
+  context('bindAll', function()
+  
+    test('binds methods to object',function()
+			local window = {
+				setPos = function(w,x,y) w.x, w.y = x, y end, 
+				setName = function(w,name) w.name = name end,
+				getName = function(w) return w.name end,
+			}
+			window = _.bindAll(window, 'setPos', 'setName', 'getName')
+			window.setPos(10,15)
+			window.setName('fooApp')
+			
+			assert_equal(window.x, 10)
+			assert_equal(window.y, 15)
+			assert_equal(window.name, 'fooApp')
+			assert_equal(window.getName(), 'fooApp')
+    end)
+    
+  end)
+	
   context('uniqueId', function()
   
     test('returns an unique (for the current session) integer Id',function()
@@ -240,4 +291,37 @@ context('Utility functions specs', function()
     
   end)  
   
+	context('iterator', function()
+
+		test('creates an iterator which continuously applies f on an input',function()
+			local next_even = _.iterator(function(x) return x + 2 end, 0)
+			assert_equal(next_even(), 2)
+			assert_equal(next_even(), 4)
+			assert_equal(next_even(), 6)
+			assert_equal(next_even(), 8)
+			assert_equal(next_even(),10)
+		end)
+		
+	end)
+	
+	context('partial', function()
+
+		test('applies partially f',function()
+			local function diff(a, b) return a - b end
+			local diffFrom20 = _.partial(diff, 20)
+			assert_equal(diffFrom20(5), 15)
+			assert_equal(diffFrom20(10), 10)
+			assert_equal(diffFrom20(-5), 25)
+		end)
+		
+		test('\'_\' can be used as a placeholder',function()
+			local function diff(a, b) return a - b end
+			local remove10 = _.partial(diff, '_',10)
+			assert_equal(remove10(5), -5)
+			assert_equal(remove10(10), 0)
+			assert_equal(remove10(15), 5)
+		end)
+		
+	end)	
+	
 end)

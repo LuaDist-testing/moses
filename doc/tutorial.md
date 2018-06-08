@@ -1,4 +1,4 @@
-*Moses: a utility-belt library for Lua*
+*Moses: a utility-belt library for functional programming in Lua*
 
 __Moses__ is a Lua utility library which provides support for functional programming. 
 It complements built-in Lua functions, making easier common operations on tables, arrays, lists, collections, objects, and a lot more.<br/>
@@ -6,14 +6,14 @@ __Moses__ was deeply inspired by [Underscore.js](http://documentcloud.github.com
 
 # <a name='TOC'>Table of Contents</a>
 
+
 * [Adding *Moses* to your project](#adding)
-* [*Moses*' API](#API)
-	* [Table functions](#table)
-	* [Array functions](#array)
-	* [Utility functions](#utility)
-	* [Object functions](#object)
-	* [Chaining](#chaining)
-	* [Import](#import)
+* [Table functions](#table)
+* [Array functions](#array)
+* [Utility functions](#utility)
+* [Object functions](#object)
+* [Chaining](#chaining)
+* [Import](#import)
 
 # <a name='adding'>Adding *Moses* to your project</a>
 
@@ -25,16 +25,12 @@ local _ = require ("moses")
 
 *Note: Lua purists tend to use "\_" to design a "dummy variable". Here, the usage of this underscore is quite idiomatic and refers to the name [Underscore](http://documentcloud.github.com/underscore/), the JS library from which *Moses* takes inspiration*.
 
-**[[⬆]](#TOC)**
+*Moses*' provides a large set of functions that can be classified into four categories:
 
-# <a name='API'>*Moses*' API</a>
-
-*Moses*' consists of a large set of functions that can be classified into four categories:
-
-* __Table functions__, which are mostly meant for tables, i.e Lua tables which contains both an array-part and/or a map-part,
+* __Table functions__, which are mostly meant for tables, i.e Lua tables which contains both an array-part and a hash-part,
 * __Array functions__, meant for array lists (or sequences),
 * __Utility functions__,
-* __Object functions__, meant for instances/classes.
+* __Object functions__.
 
 **[[⬆]](#TOC)**
 
@@ -190,13 +186,21 @@ Executes a function on each key-value pairs.
 ```lua
 _.map({1,2,3},function(i,v) 
   return v+10 
-end)) -- => "{11,12,13}"
+end) -- => "{11,12,13}"
 ````
 
 ```lua
 _.map({a = 1, b = 2},function(k,v) 
   return k..v 
 end) -- => "{a = 'a1', b = 'b2'}"
+````
+
+It also maps key-value pairs to key-value pairs
+
+```lua
+_.map({a = 1, b = 2},function(k,v) 
+  return k..k, v*2 
+end) -- => "{aa = 2, bb = 4}"
 ````
 
 ### reduce (t, f, state)
@@ -216,6 +220,40 @@ Or concatenates all values.
 _.reduce({'a','b','c','d'},function(memo,v) 
   return memo..v 
 end) -- => abcd	 
+````
+
+### reduceby (t, f, state, pred, ...)
+
+Reduces a table considering only values matching a predicate.
+For example,let us define a set of values.
+
+```lua
+local val = {-1, 8, 0, -6, 3, -1, 7, 1, -9}
+````
+We can also define some predicate functions.
+
+```lua
+-- predicate for negative values
+local function neg(_, v) return v<=0 end
+
+-- predicate for positive values
+local function pos(_, v) return v>=0 end
+````
+
+Then we can perform reduction considering only negative values :
+
+```lua
+_.reduceby(val, function(memo,v)
+  return memo+v
+end, 0, neg) -- => -17
+````
+
+Or only positive values :
+
+```lua
+_.reduceby(val, function(memo,v)
+  return memo+v
+end, 0, pos) -- => 19
 ````
 
 ### reduceRight (t, f, state)
@@ -253,7 +291,7 @@ end) -- => "{'c', 'cb', 'cba'}"
 ````
 
 ### include (t, value)
-*Aliases: `_.any`, `_.some`*.
+*Aliases: `_.any`, `_.some`, `_.contains`*.
 
 Looks for a value in a table.
 
@@ -295,28 +333,31 @@ end
 _.detect({'a','B','c'},isUpper) -- => 2
 ````
 
-### contains (t, value)
+### where (t, props)
 
-Returns true if the passed-in value was found in a given table.
+Looks through a table and returns all the values that matches all of the key-value pairs listed in `props`. 
 
 ```lua
-_.contains({6,8,10,16},8) -- => true
-_.contains({nil,true,0,true,true},false) -- => false
+local tA = {a = 1, b = 2, c = 0}
+local tB = {a = 1, b = 4, c = 1}
+local tC = {a = 4, b = 4, c = 3}
+local tD = {a = 1, b = 2, c = 3}
+local found = _.where({tA, tB, tC, tD}, {a = 1})
+
+-- => found = {tA, tB, tD}
+
+found = _.where({tA, tB, tC, tD}, {b = 4})
+
+-- => found = {tB, tC}
+
+found = _.where({tA, tB, tC, tD}, {b = 4, c = 3})
+
+-- => found = {tC}
 ````
-
-It can lookup for objects, and accepts iterator functions aswell:
-
-```lua
-_.contains({6,{18,{2,6}},10,{18,{2,{3}}},29},{18,{2,6}}) -- => true
-
-_.contains({'a','B','c'}, function(array_value)
-  return (array_value:upper() == array_value)
-end) -- => true
-````	
 
 ### findWhere (t, props)
 
-Looks through a table and returns the first value that matches all of the key-value pairs listed in properties. 
+Looks through a table and returns the first value that matches all of the key-value pairs listed in `props`. 
 
 ```lua
 local a = {a = 1, b = 2, c = 3}
@@ -326,7 +367,7 @@ _.findWhere({a, b, c}, {a = 3, b = 4}) == c -- => true
 ````
 
 ### select (t, f, ...)
-*Aliases: `_.filte`*.
+*Aliases: `_.filter`*.
 
 Collects values passing a validation test.
 
@@ -474,6 +515,63 @@ _.sort({'b','a','d','c'}, function(a,b)
 end) -- => "{'d','c','b','a'}"
 ````
 
+### sortBy (t, transform, comp)
+
+Sorts items in a collection based on the result of running a transform function through every item in the collection.
+
+```lua
+local r = _.sortBy({1,2,3,4,5}, math.sin)
+print(table.concat(r,','))
+
+-- => {5,4,3,1,2}
+````
+
+The transform function can also be a string name property.
+
+```lua
+local people ={
+	{name = 'albert', age = 40},
+	{name = 'louis', age = 55},
+	{name = 'steve', age = 35},
+	{name = 'henry', age = 19},
+}
+local r = _.sortBy(people, 'age')
+_.each(r, function(__,v) print(v.age, v.name)	end)
+
+-- => 19	henry
+-- => 35	steve
+-- => 40	albert
+-- => 55	louis
+````
+
+As seen above, the defaut comparison function is the '<' operator. For example, let us supply a different one to sort
+the list of people by decreasing age order :
+
+```lua
+local people ={
+	{name = 'albert', age = 40},
+	{name = 'louis', age = 55},
+	{name = 'steve', age = 35},
+	{name = 'henry', age = 19},
+}
+local r = _.sortBy(people, 'age', function(a,b) return a > b end)
+_.each(r, function(__,v) print(v.age, v.name)	end)
+
+-- => 55	louis
+-- => 40	albert
+-- => 35	steve
+-- => 19	henry
+````
+
+The `transform` function defaults to `_.indentity` and in that case, `_.sortBy` behaves like `_.sort`.
+
+```lua
+local r = _.sortBy({1,2,3,4,5})
+print(table.concat(r,','))
+
+-- => {1,2,3,4,5}
+````
+
 ### groupBy (t, iter, ...)
 
 Groups values in a collection depending on their return value when passed to a predicate test.
@@ -537,6 +635,48 @@ _.sameKeys({x = 1, y = 2, z = 3},{x = 1, y = 2}) -- => false
 **[[⬆]](#TOC)**
 
 ## <a name='array'>Array functions</a>
+
+### sample (array, n, seed)
+
+Samples `n` values from array.
+
+```lua
+local array = _.range(1,20)
+local sample = _.sample(array, 3)
+print(table.concat(sample,','))
+
+-- => {12,11,15}
+````
+
+`n` defaults to 1. In that case, a single value will be returned.
+
+```lua
+local array = _.range(1,20)
+local sample = _.sample(array)
+print(sample)
+
+-- => 12
+````
+
+An optional 3rd argument `seed` can be passed for deterministic random sampling.
+
+### sampleProb (array, prob, seed)
+
+Returns an array of values randomly selected from a given array.
+In case `seed` is provided, it is used for deterministic sampling.
+
+```lua
+local array = _.range(1,20)
+local sample = _.sampleProb(array, 0.2)
+print(table.concat(sample,','))
+
+-- => 5,11,12,15
+
+sample = _.sampleProb(array, 0.2, os.time())
+print(table.concat(sample,','))
+
+-- => 1,6,10,12,15,20 (or similar)
+````
 
 ### toArray (...)
 
@@ -620,6 +760,26 @@ Returns the index of the last occurence of a given value in an array.
 
 ```lua
 _.lastIndexOf({1,2,2,3},2) -- => 3
+````
+
+### findIndex (array, predicate, ...)
+
+Returns the first index at which a predicate passes a truth test.
+
+```lua
+local array = {1,2,3,4,5,6}
+local function multipleOf3(__,v) return v%3==0 end
+_.findIndex(array, multipleOf3) -- => 3
+````
+
+### findLastIndex (array, predicate, ...)
+
+Returns the last index at which a predicate passes a truth test.
+
+```lua
+local array = {1,2,3,4,5,6}
+local function multipleOf3(__,v) return v%3==0 end
+_.findLastIndex(array, multipleOf3) -- => 6
 ````
 
 ### addTop (array, ...)
@@ -735,6 +895,15 @@ Trims out all values indexed before *index*.
 ```lua
 local array = {1,2,3,4,5,6,7,8,9}
 _.rest(array,6) -- => "{6,7,8,9}"
+````
+
+### nth (array, index)
+
+Returns the value at *index*.
+
+```lua
+local array = {1,2,3,4,5,6}
+_.nth(array,3) -- => "3"
 ````
 
 ### compact (array)
@@ -885,7 +1054,7 @@ Generates a list of n repetitions of a value.
 _.rep(4,3) -- => "{4,4,4}"
 ````
 
-### partition (array, n)
+### partition (array, n, pad)
 *Aliases: `_.part`*.
 
 Returns an iterator function for partitions of a given array.
@@ -899,6 +1068,67 @@ end
 -- => 1,2
 -- => 3,4
 -- => 5,6
+
+local t = {1,2,3,4,5,6}
+for p in _.partition(t,4) do
+  print(table.concat(p, ','))
+end
+
+-- => 1,2,3,4
+-- => 5,6
+````
+
+In case the last partition has less elements than desired, a 3rd argument can be supplied to adjust the partition size.
+
+```lua
+local t = {1,2,3,4,5,6}
+for p in _.partition(t,4,0) do
+  print(table.concat(p, ','))
+end
+
+-- => 1,2,3,4
+-- => 5,6,0,0
+````
+
+### sliding (array, n, pad)
+
+Returns an iterator function which provides overlapping subsequences of a given array.
+
+```lua
+local t = {1,2,3,4,5,6,7}
+for p in _.sliding(t,3) do
+	print(table.concat(p,','))
+end
+
+-- => 1,2,3
+-- => 3,4,5
+-- => 5,6,7
+
+for p in _.sliding(t,4) do
+	print(table.concat(p,','))
+end
+
+-- => 1,2,3,4
+-- => 4,5,6,7
+
+for p in _.sliding(t,5) do
+	print(table.concat(p,','))
+end
+
+-- => 1,2,3,4,5
+-- => 5,6,7
+````
+
+In case the last subsequence wil not match the exact desired length, it can be adjusted with a 3rd argument `pad`.
+
+```lua
+local t = {1,2,3,4,5,6,7}
+for p in _.sliding(t,5,0) do
+	print(table.concat(p,','))
+end
+
+-- => 1,2,3,4,5
+-- => 5,6,7,0,0
 ````
 
 ### permutation (array)
@@ -951,6 +1181,17 @@ This function is internally used as a default transformation function.
 _.identity(1)-- => 1
 _.identity(false) -- => false
 _.identity('hello!') -- => 'hello!'
+````
+
+### constant (value)
+
+Creates a constant function. This function will constinuously yield the same output.
+
+```lua
+local pi = _.constant(math.pi)
+pi(1) -- => 3.1415926535898
+pi(2) -- => 3.1415926535898
+pi(math.pi) -- => 3.1415926535898
 ````
 
 ### once (f)
@@ -1070,6 +1311,15 @@ local sqrt2 = _.bind(math.sqrt,2)
 sqrt2() -- => 1.4142135623731
 ````
 
+### bind2 (f, v)
+
+Binds a value to be the second argument to a function.
+
+```lua
+local last2 = _.bind(_.last,2)
+last2({1,2,3,4,5,6}) -- => {5,6}
+````
+
 ### bindn (f, ...)
 
 Binds a variable number of values to be the first arguments to a function.
@@ -1079,6 +1329,26 @@ local function out(...) return table.concat {...} end
 local out = _.bindn(out,'OutPut',':',' ')
 out(1,2,3) -- => OutPut: 123
 out('a','b','c','d') -- => OutPut: abcd
+````
+
+### bindAll (obj, ...)
+
+Binds methods to object. As such, when calling any of these methods, they will receive object as a first argument.
+
+```lua
+local window = {
+	setPos = function(w,x,y) w.x, w.y = x, y end, 
+	setName = function(w,name) w.name = name end,
+	getName = function(w) return w.name end,
+}
+window = _.bindAll(window, 'setPos', 'setName', 'getName')
+window.setPos(10,15)
+print(window.x, window.y) -- => 10,15
+
+window.setName('fooApp')
+print(window.name) -- => 'fooApp'
+
+print(window.getName()) -- => 'fooApp'
 ````
 
 ### uniqueId (template, ...)
@@ -1103,6 +1373,38 @@ local formatter = function(ID) return '$'..ID..'$' end
 _.uniqueId(formatter) -- => '$ID1$'
 ````
 
+### iterator(f, x)
+*Aliases: `_.iter`*.
+
+Returns an iterator function which constinuously applies a function `f` onto an input `x`.
+For example, let us go through the powers of two.
+
+```lua
+local function po2(x) return x*2 end
+local function iter_po2 = _.iterator(po2, 1)
+iter_po2() -- => 2
+iter_po2() -- => 4
+iter_po2() -- => 8
+````
+
+### partial (f, ...)
+
+Partially apply a function by filling in any number of its arguments. 
+
+```lua
+local function diff(a, b) return a - b end
+local diffFrom20 = _.partial(diff, 20) -- arg 'a' will be 20 by default
+diffFrom20(5) -- => 15
+````
+
+The string `'_'` can be used as a placeholder in the list of arguments to specify an argument that should not be pre-filled, but left open to be supplied at call-time.
+
+```lua
+local function diff(a, b) return a - b end
+local remove5 = _.partial(diff, '_', 5) -- arg 'a' will be given at call-time, but 'b' is set to 5
+remove5(20) -- => 15
+````
+
 **[[⬆]](#TOC)**
 
 ## <a name='object'>Object functions</a>
@@ -1123,6 +1425,40 @@ Collects the values of an object attributes.
 ```lua
 _.values({1,2,3}) -- => "{1,2,3}"
 _.values({x = 0, y = 1}) -- => "{1,0}"
+````
+
+### kvpairs (obj)
+
+Converts an object to an array-list of key-value pairs.
+
+```lua
+local obj = {x = 1, y = 2, z = 3}
+_.each(_.kvpairs(obj), function(k,v)
+	print(k, table.concat(v,','))	
+end)
+
+-- => 1	y,2
+-- => 2	x,1
+-- => 3	z,3
+````
+
+### property (key)
+
+Returns a function that will return the key property of any passed-in object.
+
+```lua
+local who = _.property('name')
+local people = {name = 'Henry'}
+who(people) -- => 'Henry'
+````
+
+### propertyOf (obj)
+
+Returns a function that will return the key property of any passed-in object.
+
+```lua
+local people = {name = 'Henry'}
+print(_.propertyOf(people)('name')) -- => 'Henry'
 ````
 
 ### toBoolean (value)

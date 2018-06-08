@@ -3,6 +3,37 @@ local _ = require 'moses'
 
 context('Array functions specs', function()
 
+  context('sample', function()
+  
+    test('samples n values from array', function()
+			local array = _.range(1,20)
+			local sample = _.sample(array, 5)
+			assert_equal(#sample, 5)
+			_.each(sample, function(__,v)
+				assert_true(_.include(array, v))
+			end)
+    end)	
+    
+    test('when not given, n defaults to 1', function()
+			local array = _.range(1,20)
+			local sample = _.sample(array)
+			assert_true(_.include(array, sample))
+    end)
+		
+  end)
+	
+  context('sampleProb', function()
+  
+    test('returns a sample of an array values', function()
+			local array = _.range(1,20)
+			local sample = _.sampleProb(array, 0.2)
+			_.each(sample, function(__,v)
+				assert_true(_.include(array, v))
+			end)
+    end)	
+    
+  end)
+	
   context('toArray', function()
   
     test('converts a vararg list to an array', function()
@@ -123,7 +154,31 @@ context('Array functions specs', function()
     end)  
     
   end)
-
+	
+  context('findIndex', function()
+  
+    test('returns the first index at which a predicate passes a truth test', function()
+      assert_equal(_.findIndex({1,2,3,4,5},function(__,v) return v%2==0 end),2)
+    end)
+    
+    test('returns nil when nothing was found', function()
+      assert_nil(_.findIndex({1,2,3,4,5},function(_,v) return v>5 end))
+    end)  
+    
+  end)	
+	
+  context('findLastIndex', function()
+  
+    test('returns the last index at which a predicate passes a truth test', function()
+      assert_equal(_.findLastIndex({1,2,3,4,5},function(_,v) return v%2==0 end),4)
+    end)
+    
+    test('returns nil when nothing was found', function()
+      assert_nil(_.findLastIndex({1,2,3,4,5},function(_,v) return v>5 end))
+    end)  
+    
+  end)
+	
   context('addTop', function()
   
     test('adds values at the top of an array', function()
@@ -339,6 +394,14 @@ context('Array functions specs', function()
     end)     
   
   end)  
+
+  context('nth', function()
+
+    test('returns the value at "index"', function()
+      assert_equal(3, _.nth({1,2,3,4,5,6}, 3))
+    end)
+    
+  end)
   
   context('compact',function() 
   
@@ -522,7 +585,59 @@ context('Array functions specs', function()
       end      
     end)   
     
-  end)  
+    test('if a 3rd argument pad is supplied, will adjust the last partition', function()
+      local array = _.range(1,10)
+      local split4 = {{1,2,3,4},{5,6,7,8},{9,10,0,0}}
+      local i = 0
+      for p in _.partition(array,4,0) do
+        i = i + 1
+        assert_true(_.isEqual(p, split4[i]))
+      end     
+    end)
+		
+  end)
+	
+  context('sliding',function()  
+  
+    test('returns overlapping subsequences', function()
+      local array = _.range(1,10)
+			local sliding2 = {{1,2},{2,3},{3,4},{4,5},{5,6},{6,7},{7,8},{8,9},{9,10}}
+			local sliding3 = {{1,2,3},{3,4,5},{5,6,7},{7,8,9},{9,10}}
+			local sliding5 = {{1,2,3,4,5},{5,6,7,8,9},{9,10}}
+      local i = 0
+      for p in _.sliding(array,2) do
+        i = i + 1
+        assert_true(_.isEqual(p, sliding2[i]))
+      end
+      i = 0
+      for p in _.sliding(array,3) do
+        i = i + 1
+        assert_true(_.isEqual(p, sliding3[i]))
+      end
+      i = 0
+      for p in _.sliding(array,5) do
+        i = i + 1
+        assert_true(_.isEqual(p, sliding5[i]))
+      end  			
+    end)
+		
+    test('if a 3rd argument pad is supplied, will adjust the last subsequence', function()
+      local array = _.range(1,10)
+			local sliding3 = {{1,2,3},{3,4,5},{5,6,7},{7,8,9},{9,10,0}}
+			local sliding5 = {{1,2,3,4,5},{5,6,7,8,9},{9,10,0,0,0}}
+      local i = 0
+      for p in _.sliding(array,3,0) do
+        i = i + 1
+        assert_true(_.isEqual(p, sliding3[i]))
+      end
+      i = 0
+      for p in _.sliding(array,5,0) do
+        i = i + 1
+        assert_true(_.isEqual(p, sliding5[i]))
+      end  			
+    end)   		
+    
+  end)	
  
   context('permutation',function()  
   

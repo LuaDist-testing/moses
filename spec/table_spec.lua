@@ -174,6 +174,12 @@ context('Table functions specs', function()
           return k..v 
         end),{a = 'a1',b = 'b2'}))
     end)
+
+    test('maps key-value pairs to key-value pairs', function()
+      assert_true(_.isEqual(_.map({a = 1, b = 2}, function(k, v)
+          return k .. k, v + 10
+        end), {aa = 11, bb = 12}))
+    end)
     
   end)
   
@@ -195,6 +201,17 @@ context('Table functions specs', function()
     end)
     
   end)
+	
+  context('reduceby', function()
+  
+    test('folds a collection (left to right) for specific values', function()
+			local function even(_,v) return v%2==0 end
+			local function odd(_,v) return v%2~=0 end
+      assert_equal(_.reduceby({1,2,3,4},function(memo,v) return memo+v end,0,even), 6)
+      assert_equal(_.reduceby({1,2,3,4},function(memo,v) return memo+v end,0,odd), 4)
+    end)
+   
+  end)	
   
   context('reduceRight', function()
   
@@ -284,31 +301,34 @@ context('Table functions specs', function()
   
   end) 
  
-  context('contains', function()
-  
-    test('returns true if value is present in a list', function()
-      assert_true(_.contains({6,8,10,16},8))
+	context('where', function()
+	
+    test('Returns all values in a list having all of a given set of properties', function()
+      local set = {
+				{a = 1, b = 2},
+				{a = 2, b = 2},
+				{a = 2, b = 4},
+				{a = 3, b = 4}
+			}
+      assert_true(_.isEqual(_.where(set, {a = 2}), {set[2],set[3]}))
+      assert_true(_.isEqual(_.where(set, {b = 4}), {set[3],set[4]}))
+      assert_true(_.isEqual(_.where(set, {a = 2, b = 2}), {set[2]}))
     end)
     
-    test('returns false when value was not found', function()
-      assert_false(_.contains({nil,true,0,true,true},false))
-    end)
-    
-    test('can lookup for a object', function()
-      assert_true(_.contains({6,{18,{2,6}},10,{18,{2,{3}}},29},{18,{2,6}}))
-    end)    
-    
-    test('accepts iterator functions', function()
-      assert_true(_.contains({'a','B','c'}, function(array_value)
-        return (array_value:upper() == array_value)
-      end))
-    end) 
-  
-  end) 
-  
+    test('returns nil when value was not found', function()
+      local set = {
+				{a = 1, b = 2},
+				{a = 2, b = 2},
+			}
+      assert_nil(_.where(set, {a = 3}))
+      assert_nil(_.where(set, {b = 1}))
+    end) 	
+	
+	end)
+	
   context('findWhere', function()
   
-    test('Returns the first value in a list having all of some given set of properties', function()
+    test('Returns the first value in a list having all of a given set of properties', function()
       local a = {a = 1, b = 2}
       local b = {a = 2, b = 3}
       local c = {a = 3, b = 4}
@@ -482,7 +502,32 @@ context('Table functions specs', function()
       assert_true(_.isEqual(_.sort({'b','a','d','c'}),{'a','b','c','d'}))
     end)     
   
-  end)     
+  end)
+
+	context('sortBy', function()
+	
+		test('sort values on the result of a transform function', function()
+			assert_true(_.isEqual(_.sortBy({1,2,3,4,5}, math.sin), {5,4,3,1,2}))
+		end)
+		
+		test('the transform function defaults to _.identity', function()
+			assert_true(_.isEqual(_.sortBy({1,2,3,4,5}), {1,2,3,4,5}))
+		end)
+
+		test('transform function can be a string name property', function()
+			local unsorted = {{item = 1, value = 10},{item = 2, value = 5},{item = 3, value = 8}}
+			local sorted = {{item = 2, value = 5},{item = 3, value = 8},{item = 1, value = 10}}
+			assert_true(_.isEqual(_.sortBy(unsorted, 'value'), sorted))
+		end)
+		
+		test('can use a custom comparison function', function()
+			local unsorted = {{item = 1, value = 10},{item = 2, value = 5},{item = 3, value = 8}}
+			local sorted = {{item = 1, value = 10},{item = 3, value = 8},{item = 2, value = 5}}
+			local function comp(a,b) return a > b end
+			assert_true(_.isEqual(_.sortBy(unsorted, 'value', comp), sorted))
+		end)		
+	
+	end)
   
   context('groupBy', function()
   
@@ -500,7 +545,14 @@ context('Table functions specs', function()
           return value:len()
         end),{[3] = {'one','two'},[4] = {'four','five'},[5] = {'three'}}))
         
-    end)     
+    end)
+    
+    test('can takes extra-args', function()
+    
+      assert_true(_.isEqual(_.groupBy({3,9,10,12,15}, function(k,v,x) return v%x == 0 end,2), {[false] = {3,9,15}, [true] = {10,12}}))
+      assert_true(_.isEqual(_.groupBy({3,9,10,12,15}, function(k,v,x) return v%x == 0 end,3), {[false] = {10}, [true] = {3,9,12,15}}))
+      
+    end)
   
   end)   
 
@@ -530,7 +582,7 @@ context('Table functions specs', function()
       assert_equal(_.size {1,2,3},3)        
     end)
     
-    test('counts nested tables elements as a unique value', function()      
+    test('counts nested tables elements as an unique value', function()      
       assert_equal(_.size {1,2,3,{4,5}},4)        
     end)
 
@@ -546,15 +598,18 @@ context('Table functions specs', function()
       assert_equal(_.size ({1,2},3,4,5),2)   
     end)    
 
-    test('counts the number of args when the first one is not a table', function()      
+    test('counts the number of non-nil args when the first one is not a table', function()      
       assert_equal(_.size (1,3,4,5),4)
+      assert_equal(_.size (nil,1,3,4,5),4)
+      assert_equal(_.size (nil,1,3,4,nil,5),4)
     end)  
  
     test('handles nil', function()      
       assert_equal(_.size(),0)
       assert_equal(_.size(nil),0)
     end)
-  
+
+		
   end)   
 
   context('containsKeys', function()
@@ -591,10 +646,10 @@ context('Table functions specs', function()
     end)
 
     test('is commutative', function()      
-      assert_true(_.sameKeys({1,2,3,4},{4,5,6}))      
-      assert_true(_.sameKeys({x = 1, y = 2,z = 5},{x = 4,y = -1}))
-      assert_true(_.sameKeys({1,2,3},{4,5,6,7}))
-      assert_true(_.sameKeys({x = 1, y = 2},{x = 4,y = -1,z = 0}))
+      assert_false(_.sameKeys({1,2,3,4},{4,5,6}))      
+      assert_false(_.sameKeys({x = 1, y = 2,z = 5},{x = 4,y = -1}))
+      assert_false(_.sameKeys({1,2,3},{4,5,6,7}))
+      assert_false(_.sameKeys({x = 1, y = 2},{x = 4,y = -1,z = 0}))
     end)
     
   end) 

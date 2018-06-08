@@ -22,7 +22,42 @@ context('Object functions specs', function()
     end)
    
   end)  
+	
+  context('kvpairs', function()
   
+    test('converts key-values pairs in object to array-list of k,v pairs',function()
+			local obj = _.kvpairs({x = 1, y = 2, z = 3})
+			table.sort(obj, function(a,b) return a[1] < b[1] end)
+			assert_true(_.isEqual(obj[1],{'x',1}))
+			assert_true(_.isEqual(obj[2],{'y',2}))
+			assert_true(_.isEqual(obj[3],{'z',3}))
+    end)
+   
+  end)  	
+  
+  context('property', function()
+  
+    test('Returns a function that will return the key property of any passed-in object.',function()
+			assert_equal(_.property('sin')(math), math.sin)
+			assert_equal(_.property('find')(string), string.find)
+			assert_equal(_.property('insert')(table), table.insert)
+			assert_equal(_.property('yield')(coroutine), coroutine.yield)
+    end)
+   
+  end)  	
+  
+  context('propertyOf', function()
+  
+    test('Returns a function which will return the value of an object property.',function()
+			assert_equal(_.propertyOf(math)('cos'), math.cos)
+			assert_equal(_.propertyOf(string)('char'), string.char)
+			assert_equal(_.propertyOf(table)('remove'), table.remove)	
+			assert_equal(_.propertyOf(_)('propertyOf'), _.propertyOf)	
+    end)
+   
+  end)  	
+  
+	
   context('toBoolean', function()
   
     test('converts a value to a boolean',function()
